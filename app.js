@@ -19,8 +19,15 @@
     fx0: 115 / 2400, fy0: 183 / 1784,
     fx1: 2311 / 2400, fy1: 1561 / 1784,
   };
-  const HOME = { W: 11.49, H: 7.22 }; // meters (width x depth)
-  const AREA_TOTAL = HOME.W * HOME.H; // ~82.9 m^2
+  /* Scale is calibrated against the interior dimensions printed on the plan
+     (345/244/358/174/285/312 cm...): least-squares over 8 measured room
+     spans gives 1.8088 px/cm on the 2400px source, residuals <= 2 cm.
+     The drawn wall envelope (2196x1378 px) therefore represents
+     12.14 x 7.62 m. Room interiors match their printed sizes exactly;
+     do NOT map the envelope to the nominal 11.49x7.22 exterior — that
+     shrinks every room by ~5%. */
+  const HOME = { W: 21.96 / 1.8088, H: 13.78 / 1.8088 }; // 12.14 x 7.62 m
+  let floorArea = HOME.W * HOME.H * 0.85; // refined from wall grid on load
 
   const GRID = 0.05;      // snap grid: 5 cm
   const WALL_SNAP = 0.09; // snap to envelope walls within ~9 cm
@@ -118,7 +125,7 @@
         if (xh < cw) hx += `<div class="tick" style="left:${xh}px"></div>`;
       }
     }
-    hx += `<div class="lbl" style="left:${HOME.W * ppm}px">${HOME.W}</div>`;
+    hx += `<div class="lbl" style="left:${HOME.W * ppm}px">${HOME.W.toFixed(1)}</div>`;
     rulerX.innerHTML = hx;
 
     let hy = "";
@@ -191,15 +198,122 @@
           over.add(a.id); over.add(b.id);
         }
       }
+    for (const f of state.furniture)
+      if (!over.has(f.id) && overlapsWall(f)) over.add(f.id);
     for (const [id, el] of els) el.classList.toggle("overlap", over.has(id));
   }
 
   function updateStats() {
     const used = state.furniture.reduce((s, f) => s + f.w * f.d, 0);
-    $("statTotal").textContent = AREA_TOTAL.toFixed(1) + " מ״ר";
+    $("statTotal").textContent = floorArea.toFixed(1) + " מ״ר";
     $("statUsed").textContent = used.toFixed(1) + " מ״ר";
-    $("statPct").textContent = Math.round((used / AREA_TOTAL) * 100) + "%";
+    $("statPct").textContent = Math.round((used / floorArea) * 100) + "%";
     $("statCount").textContent = state.furniture.length;
+  }
+
+  /* ============================================================
+     Wall grid — detected from the plan image itself.
+     The envelope sub-rect is downsampled to 2.5 cm cells; dark cells
+     after a 3x3 morphological opening (which drops text strokes and
+     door arcs) are walls/fixed fixtures. Used for: red overlap warning,
+     snapping to interior wall faces, and net floor area.
+     ============================================================ */
+  const CELL = 0.025; // meters per grid cell
+  let wallGrid = null, gw = 0, gh = 0;
+  let snapLeft = [], snapRight = [], snapTop = [], snapBottom = [];
+
+  function buildWallGrid(img) {
+    gw = Math.round(HOME.W / CELL);
+    gh = Math.round(HOME.H / CELL);
+    const c = document.createElement("canvas");
+    c.width = gw; c.height = gh;
+    const ctx = c.getContext("2d");
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    ctx.drawImage(img,
+      PLAN.fx0 * iw, PLAN.fy0 * ih,
+      (PLAN.fx1 - PLAN.fx0) * iw, (PLAN.fy1 - PLAN.fy0) * ih,
+      0, 0, gw, gh);
+    const d = ctx.getImageData(0, 0, gw, gh).data;
+    const raw = new Uint8Array(gw * gh);
+    for (let i = 0; i < gw * gh; i++) {
+      const l = (d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3;
+      // walls are ~40-140 lum, floor ~250; 150 means a boundary cell counts
+      // as wall only if it is mostly wall, so rooms keep their full size
+      raw[i] = l < 150 ? 1 : 0;
+    }
+    // 3x3 erosion (out-of-bounds counts as wall, keeping the outer walls)
+    const at = (a, x, y) => (x < 0 || y < 0 || x >= gw || y >= gh) ? 1 : a[y * gw + x];
+    const eroded = new Uint8Array(gw * gh);
+    for (let y = 0; y < gh; y++)
+      for (let x = 0; x < gw; x++) {
+        let all = 1;
+        for (let dy = -1; dy <= 1 && all; dy++)
+          for (let dx = -1; dx <= 1 && all; dx++)
+            if (!at(raw, x + dx, y + dy)) all = 0;
+        eroded[y * gw + x] = all;
+      }
+    // 3x3 dilation back
+    wallGrid = new Uint8Array(gw * gh);
+    let free = 0;
+    for (let y = 0; y < gh; y++)
+      for (let x = 0; x < gw; x++) {
+        let any = 0;
+        for (let dy = -1; dy <= 1 && !any; dy++)
+          for (let dx = -1; dx <= 1 && !any; dx++)
+            if (at(eroded, x + dx, y + dy) === 1 && !(x + dx < 0 || y + dy < 0 || x + dx >= gw || y + dy >= gh)) any = 1;
+        wallGrid[y * gw + x] = any;
+        if (!any) free++;
+      }
+    floorArea = free * CELL * CELL;
+    buildSnapLines();
+  }
+
+  // Wall-face snap lines: boundaries between wall and free space with a
+  // contiguous face of at least 40 cm.
+  function buildSnapLines() {
+    const MINRUN = Math.round(0.4 / CELL);
+    snapLeft = []; snapRight = []; snapTop = []; snapBottom = [];
+    const cell = (x, y) => wallGrid[y * gw + x];
+    for (let x = 1; x < gw; x++) {
+      let runWF = 0, runFW = 0;
+      for (let y = 0; y <= gh; y++) {
+        const wf = y < gh && cell(x - 1, y) === 1 && cell(x, y) === 0; // wall|free
+        const fw = y < gh && cell(x - 1, y) === 0 && cell(x, y) === 1; // free|wall
+        if (wf) runWF++; else { if (runWF >= MINRUN) snapLeft.push(x * CELL); runWF = 0; }
+        if (fw) runFW++; else { if (runFW >= MINRUN) snapRight.push(x * CELL); runFW = 0; }
+      }
+    }
+    for (let y = 1; y < gh; y++) {
+      let runWF = 0, runFW = 0;
+      for (let x = 0; x <= gw; x++) {
+        const wf = x < gw && cell(x, y - 1) === 1 && cell(x, y) === 0;
+        const fw = x < gw && cell(x, y - 1) === 0 && cell(x, y) === 1;
+        if (wf) runWF++; else { if (runWF >= MINRUN) snapTop.push(y * CELL); runWF = 0; }
+        if (fw) runFW++; else { if (runFW >= MINRUN) snapBottom.push(y * CELL); runFW = 0; }
+      }
+    }
+    const dedupe = (arr) => {
+      arr.sort((a, b) => a - b);
+      return arr.filter((v, i) => i === 0 || v - arr[i - 1] > 0.05);
+    };
+    snapLeft = dedupe(snapLeft); snapRight = dedupe(snapRight);
+    snapTop = dedupe(snapTop); snapBottom = dedupe(snapBottom);
+  }
+
+  // Does the item overlap a wall/fixture? (1.5 cm tolerance so a piece
+  // sitting flush against a wall is not flagged.)
+  function overlapsWall(item) {
+    if (!wallGrid) return false;
+    const fp = footprint(item);
+    const m = 0.015;
+    const x0 = Math.max(0, Math.floor((item.x - fp.w / 2 + m) / CELL));
+    const x1 = Math.min(gw - 1, Math.ceil((item.x + fp.w / 2 - m) / CELL) - 1);
+    const y0 = Math.max(0, Math.floor((item.y - fp.h / 2 + m) / CELL));
+    const y1 = Math.min(gh - 1, Math.ceil((item.y + fp.h / 2 - m) / CELL) - 1);
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++)
+        if (wallGrid[y * gw + x]) return true;
+    return false;
   }
 
   /* ---------- color helpers ---------- */
@@ -260,13 +374,26 @@
     // grid snap on center
     item.x = snapGrid(item.x);
     item.y = snapGrid(item.y);
-    // wall snap (edges to envelope)
+    // snap edges to detected wall faces (interior + exterior)
+    const nearest = (arr, v) => {
+      let best = null;
+      for (const s of arr) if (best === null || Math.abs(s - v) < Math.abs(best - v)) best = s;
+      return best;
+    };
     const left = item.x - fp.w / 2, right = item.x + fp.w / 2;
     const top = item.y - fp.h / 2, bottom = item.y + fp.h / 2;
-    if (Math.abs(left) <= WALL_SNAP) item.x = fp.w / 2;
-    else if (Math.abs(HOME.W - right) <= WALL_SNAP) item.x = HOME.W - fp.w / 2;
-    if (Math.abs(top) <= WALL_SNAP) item.y = fp.h / 2;
-    else if (Math.abs(HOME.H - bottom) <= WALL_SNAP) item.y = HOME.H - fp.h / 2;
+    const sL = nearest(snapLeft, left), sR = nearest(snapRight, right);
+    const dL = sL === null ? Infinity : Math.abs(sL - left);
+    const dR = sR === null ? Infinity : Math.abs(sR - right);
+    if (Math.min(dL, dR) <= WALL_SNAP) {
+      if (dL <= dR) item.x = sL + fp.w / 2; else item.x = sR - fp.w / 2;
+    }
+    const sT = nearest(snapTop, top), sB = nearest(snapBottom, bottom);
+    const dT = sT === null ? Infinity : Math.abs(sT - top);
+    const dB = sB === null ? Infinity : Math.abs(sB - bottom);
+    if (Math.min(dT, dB) <= WALL_SNAP) {
+      if (dT <= dB) item.y = sT + fp.h / 2; else item.y = sB - fp.h / 2;
+    }
     constrainItem(item);
   }
 
@@ -324,7 +451,7 @@
       grabDX = p.x - it.x;
       grabDY = p.y - it.y;
       moved = false;
-      el.setPointerCapture(e.pointerId);
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* stale pointer */ }
       el.classList.add("dragging");
     });
 
@@ -584,7 +711,7 @@
         ctx.fillStyle = "#2b3440";
         ctx.font = "bold 30px Arial, sans-serif";
         ctx.fillText(
-          (state.homeName || "הבית שלי") + " — " + HOME.W + " × " + HOME.H + " מ׳",
+          (state.homeName || "הבית שלי") + " — דגם חנניה",
           cw / 2, header / 2);
         // plan background: same fractional sub-rect mapping as on screen
         const iw = img.naturalWidth, ih = img.naturalHeight;
@@ -652,6 +779,62 @@
   });
 
   /* ============================================================
+     Keyboard shortcuts
+     Delete/Backspace = delete · arrows = nudge (Shift = 25 cm)
+     Ctrl+C/X/V = copy/cut/paste · Ctrl+D = duplicate
+     ============================================================ */
+  let clipboard = null;
+
+  function pasteClipboard() {
+    if (!clipboard) return;
+    const item = Object.assign({}, clipboard, {
+      id: uid(),
+      x: clipboard.x + 0.2,
+      y: clipboard.y + 0.2,
+    });
+    constrainItem(item);
+    state.furniture.push(item);
+    clipboard = Object.assign({}, item); // repeated paste cascades
+    selectedId = item.id;
+    renderAll();
+    syncSelectedPanel();
+    scheduleSave();
+  }
+
+  document.addEventListener("keydown", (e) => {
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    const ctrl = e.ctrlKey || e.metaKey;
+    const it = getItem(selectedId);
+    const key = e.key.toLowerCase();
+
+    if (ctrl && key === "c") {
+      if (it) { clipboard = Object.assign({}, it); e.preventDefault(); }
+    } else if (ctrl && key === "x") {
+      if (it) { clipboard = Object.assign({}, it); deleteItem(it.id); e.preventDefault(); }
+    } else if (ctrl && key === "v") {
+      if (clipboard) { pasteClipboard(); e.preventDefault(); }
+    } else if (ctrl && key === "d") {
+      if (it) { duplicateItem(it.id); e.preventDefault(); }
+    } else if (e.key === "Delete" || e.key === "Backspace") {
+      if (it) { deleteItem(it.id); e.preventDefault(); }
+    } else if (e.key.startsWith("Arrow")) {
+      if (!it) return;
+      const step = e.shiftKey ? 0.25 : GRID;
+      if (e.key === "ArrowLeft") it.x -= step;
+      else if (e.key === "ArrowRight") it.x += step;
+      else if (e.key === "ArrowUp") it.y -= step;
+      else if (e.key === "ArrowDown") it.y += step;
+      constrainItem(it); // no wall snap here — it would fight the nudge
+      renderItem(it);
+      updateOverlaps();
+      updateStats();
+      scheduleSave();
+      e.preventDefault();
+    }
+  });
+
+  /* ============================================================
      Welcome modal (first visit)
      ============================================================ */
   function maybeWelcome(hadData) {
@@ -667,6 +850,13 @@
     const hadData = loadFromStorage();
     computeScale();
     maybeWelcome(hadData);
+    // wall detection (non-fatal if it fails, e.g. canvas blocked on file://)
+    const gridImg = new Image();
+    gridImg.onload = () => {
+      try { buildWallGrid(gridImg); } catch (err) { console.warn("זיהוי קירות נכשל", err); }
+      renderAll();
+    };
+    gridImg.src = PLAN_IMG;
     window.addEventListener("resize", debounce(computeScale, 120));
     if (window.ResizeObserver) {
       new ResizeObserver(debounce(computeScale, 120)).observe(canvasWrap.parentElement);

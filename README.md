@@ -40,10 +40,14 @@
 
 ### קנה מידה
 
-מידות המבנה: **11.49 × 7.22 מ׳** (סה״כ ~82.9 מ״ר), מהתוכנית הממודדת
-המקורית. אלה משמשות כמקור האמת לקנה המידה: מלבן הקירות של הבניין בתמונה
-ממופה אל מלבן של 11.49×7.22 מ׳, וכל הרהיטים נגזרים ממנו כך שיוצגו בגודלם
-הנכון בס״מ.
+קנה המידה מכויל לפי **מידות הפנים המודפסות על התוכנית** (345, 244, 358,
+285, 312, 575 ס״מ...): נמדדו 8 חללים בתמונה והתקבל קנה מידה אחיד של
+‎1.8088 פיקסל/ס״מ עם סטיות של עד ±2 ס״מ. כך רהיט בגודל החדר (למשל 285
+ס״מ בחדר ההורים) ממלא בדיוק את החלל בין הקירות.
+
+בנוסף, האפליקציה מזהה את הקירות מתוך התמונה עצמה: רהיט שחופף קיר או
+אלמנט קבוע (שיש, כיריים) נצבע באדום, ורהיטים נצמדים לפאות הקירות
+הפנימיים. "שטח רצפה" בכותרת הוא השטח נטו ללא קירות.
 
 התוכנית המוצגת היא `assets/plan.webp` — גרסה דחוסה (~200KB) של המקור
 האיכותי `assets/plan-source.png` (2400×1784). אפשר להחליף את התמונה בכל
@@ -51,9 +55,9 @@
 לחיתוך שונה יש לעדכן את ארבעת שברי הכיול (`PLAN`) ואת `PLAN_IMG` בראש
 `app.js`.
 
-> ⚠️ מידות הפנים המסומנות בתוכנית (למשל חדר 358 ס״מ) עשויות להיות שונות
-> ב-~5% מהמידות שמתקבלות מהמעטפת הזו, בגלל אי-דיוקים בין המידות הנומינליות
-> לתמונה. **לכל מידה קריטית מומלץ לאמת מול מדידה בשטח.**
+> ⚠️ שימו לב: המעטפת החיצונית המצוירת שקולה ל-‏12.14×7.62 מ׳ — מעט יותר
+> מהמידה הנומינלית 11.49×7.22 מ׳. מידות הפנים של החדרים הן המדויקות.
+> **לכל מידה קריטית מומלץ לאמת מול מדידה בשטח.**
 
 </div>
 
@@ -97,14 +101,19 @@ their own browser.
 
 ### Scale
 
-Building size: **11.49 × 7.22 m** (~82.9 m², from the measured original plan).
-This is the source of truth for scale — the building's wall rectangle in the
-image is mapped to an 11.49 × 7.22 m rectangle, and every furniture piece is
-scaled from it so it renders at its true size in cm.
+Scale is calibrated against the **interior dimensions printed on the plan**
+(345, 244, 358, 285, 312, 575 cm...): 8 room spans were measured in the image,
+yielding a uniform 1.8088 px/cm with residuals within ±2 cm. A piece sized
+exactly like a room (e.g. 285 cm in the parents' bedroom) fits the space
+between the walls precisely.
 
-> ⚠️ The interior room dimensions printed on the plan (e.g. a 358 cm room) can
-> differ by ~5% from what this envelope mapping yields, due to nominal‑vs‑image
-> inaccuracies. **Verify any critical dimension against a real on‑site
+The app also detects walls from the image itself: a piece overlapping a wall
+or a fixed element (counter, cooktop) turns red, and pieces snap to interior
+wall faces. The "floor area" stat is the net area excluding walls.
+
+> ⚠️ Note: the drawn exterior envelope equals 12.14 × 7.62 m — slightly larger
+> than the nominal 11.49 × 7.22 m exterior. The interior room dimensions are
+> the accurate ones. **Verify any critical dimension against a real on‑site
 > measurement.**
 
 ## Tech
