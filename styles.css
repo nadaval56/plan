@@ -60,13 +60,29 @@ button.primary{
 }
 button.primary:hover{filter:brightness(1.05)}
 
-/* ---------- layout ---------- */
+/* ---------- layout ----------
+   Desktop: selected-item + custom form beside the canvas (no scrolling),
+   catalog spread full-width below. Mobile keeps the stacked order:
+   canvas, catalog, custom, selected. */
 .layout{
   display:grid;grid-template-columns:1fr 320px;gap:16px;
+  grid-template-areas:
+    "canvas selected"
+    "canvas custom"
+    "catalog catalog";
   padding:16px 18px;max-width:1400px;margin:0 auto;align-items:start;
 }
+.canvas-panel{grid-area:canvas}
+.card-selected{grid-area:selected}
+.card-custom{grid-area:custom}
+.card-catalog{grid-area:catalog}
+.card-catalog .catalog{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 @media (max-width:860px){
-  .layout{grid-template-columns:1fr}
+  .layout{
+    grid-template-columns:1fr;
+    grid-template-areas:"canvas" "catalog" "custom" "selected";
+  }
+  .card-catalog .catalog{grid-template-columns:1fr 1fr}
 }
 
 /* ---------- canvas + rulers ---------- */
@@ -122,8 +138,7 @@ button.primary:hover{filter:brightness(1.05)}
 
 .hint{font-size:12px;color:var(--muted);margin:8px 4px 0;text-align:center}
 
-/* ---------- side panel ---------- */
-.side-panel{display:flex;flex-direction:column;gap:14px}
+/* ---------- cards ---------- */
 .card{
   background:var(--panel);border:1px solid var(--line);border-radius:12px;
   padding:14px;box-shadow:var(--shadow);
