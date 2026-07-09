@@ -61,28 +61,32 @@ button.primary{
 button.primary:hover{filter:brightness(1.05)}
 
 /* ---------- layout ----------
-   Desktop: selected-item + custom form beside the canvas (no scrolling),
-   catalog spread full-width below. Mobile keeps the stacked order:
-   canvas, catalog, custom, selected. */
+   Desktop: a side column (custom form, add-from-catalog opener, selected
+   item) whose total height is locked by JS (--side-h) to the plan card's
+   height; the selected card stretches to fill the remainder. The catalog
+   itself lives in a popup. Mobile stacks the column below the canvas. */
 .layout{
   display:grid;grid-template-columns:1fr 320px;gap:16px;
-  grid-template-areas:
-    "canvas selected"
-    "canvas custom"
-    "catalog catalog";
+  grid-template-areas:"canvas side";
   padding:16px 18px;max-width:1400px;margin:0 auto;align-items:start;
 }
 .canvas-panel{grid-area:canvas}
-.card-selected{grid-area:selected}
-.card-custom{grid-area:custom}
-.card-catalog{grid-area:catalog}
-.card-catalog .catalog{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.side-panel{
+  grid-area:side;display:flex;flex-direction:column;gap:14px;
+  height:var(--side-h,auto);min-height:0;
+}
+.card-selected{flex:1;min-height:0;display:flex;flex-direction:column}
+.card-selected .sel-form{overflow-y:auto;min-height:0}
+.sel-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;text-align:center;color:var(--muted);font-size:14px;line-height:1.5;
+  border:2px dashed var(--line);border-radius:10px;padding:16px;
+}
+.sel-empty p{margin:0}
 @media (max-width:860px){
-  .layout{
-    grid-template-columns:1fr;
-    grid-template-areas:"canvas" "catalog" "custom" "selected";
-  }
-  .card-catalog .catalog{grid-template-columns:1fr 1fr}
+  .layout{grid-template-columns:1fr;grid-template-areas:"canvas" "side"}
+  .side-panel{height:auto}
+  .sel-empty{padding:22px 16px}
 }
 
 /* ---------- canvas + rulers ---------- */
@@ -183,4 +187,9 @@ button.primary:hover{filter:brightness(1.05)}
 .modal h2{margin:0 0 12px}
 .modal p{margin:0 0 12px;line-height:1.55;color:#3a4652;font-size:15px}
 .modal .primary{margin-top:6px}
+.modal-catalog{max-width:640px;width:100%}
+.modal-catalog .catalog{
+  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  max-height:60vh;overflow-y:auto;margin-bottom:8px;
+}
 [hidden]{display:none!important}
