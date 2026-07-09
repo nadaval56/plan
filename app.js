@@ -8,13 +8,16 @@
 
   /* ---------- Fixed plan geometry ----------
      The real building envelope (11.49 x 7.22 m) maps to the sub-rectangle
-     of assets/plan.png where the outer walls sit. Calibration is stored as
-     FRACTIONS of the image size (measured 16..805 x 40..534 on an 818x600
-     copy), so a higher-resolution scan with the same framing can replace
-     assets/plan.png without any code change. */
+     of the plan image where the outer walls sit. Calibration is stored as
+     FRACTIONS of the image size (wall envelope measured 115..2311 x
+     183..1561 on the 2400x1784 source, assets/plan-source.png), so the
+     image can be swapped for any resolution of the same framing without
+     code changes. A different crop only needs these four fractions and
+     PLAN_IMG updated. */
+  const PLAN_IMG = "./assets/plan.webp";
   const PLAN = {
-    fx0: 16 / 818, fy0: 40 / 600,
-    fx1: 805 / 818, fy1: 534 / 600,
+    fx0: 115 / 2400, fy0: 183 / 1784,
+    fx1: 2311 / 2400, fy1: 1561 / 1784,
   };
   const HOME = { W: 11.49, H: 7.22 }; // meters (width x depth)
   const AREA_TOTAL = HOME.W * HOME.H; // ~82.9 m^2
@@ -97,7 +100,7 @@
   function positionBackground(cw, ch) {
     const bgW = cw / (PLAN.fx1 - PLAN.fx0);
     const bgH = ch / (PLAN.fy1 - PLAN.fy0);
-    planBg.style.backgroundImage = "url(./assets/plan.png)";
+    planBg.style.backgroundImage = "url(" + PLAN_IMG + ")";
     planBg.style.backgroundSize = bgW + "px " + bgH + "px";
     planBg.style.backgroundPosition =
       -PLAN.fx0 * bgW + "px " + -PLAN.fy0 * bgH + "px";
@@ -628,7 +631,7 @@
       }
     };
     img.onerror = () => alert("טעינת תמונת התוכנית נכשלה");
-    img.src = "./assets/plan.png";
+    img.src = PLAN_IMG;
   });
 
   /* ============================================================
