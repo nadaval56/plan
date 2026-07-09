@@ -5,13 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#3a4a5a">
   <title>עוברים דירה — דגם חנניה</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛋️</text></svg>">
+  <meta name="description" content="תכננו את הבית שלכם - מוקדש באהבה לתושבי מצפה כרמים">
+  <meta property="og:title" content="עוברים דירה — דגם חנניה">
+  <meta property="og:description" content="תכננו את הבית שלכם - מוקדש באהבה לתושבי מצפה כרמים">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nadaval56.github.io/plan/">
+  <meta property="og:image" content="https://nadaval56.github.io/plan/assets/og-cover.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="app-header">
     <div class="title-block">
-      <h1>🛋️ עוברים דירה</h1>
+      <h1>🚚 עוברים דירה</h1>
       <label class="home-name">
         <span>שם הבית:</span>
         <input id="homeName" type="text" maxlength="40" placeholder="הבית שלי" value="הבית שלי">
@@ -49,41 +57,39 @@
       <p class="hint">מקלדת: חיצים = הזזה (Shift = צעד גדול) · Delete = מחיקה · Ctrl+C/X/V = העתקה/גזירה/הדבקה · Ctrl+D = שכפול</p>
     </section>
 
-    <aside class="side-panel">
-      <div class="card">
-        <h2>הוספת רהיט</h2>
-        <div class="catalog" id="catalog"></div>
-      </div>
-
-      <div class="card">
-        <h2>רהיט מותאם</h2>
-        <div class="custom-form">
-          <label>שם <input id="cName" type="text" placeholder="לדוגמה: פסנתר"></label>
-          <div class="row2">
-            <label>רוחב (ס״מ) <input id="cW" type="number" min="10" max="1000" step="5" value="100"></label>
-            <label>עומק (ס״מ) <input id="cD" type="number" min="10" max="1000" step="5" value="50"></label>
-          </div>
-          <button id="btnAddCustom" class="primary">➕ הוסף רהיט מותאם</button>
+    <div class="card card-selected" id="selectedCard" hidden>
+      <h2>פריט נבחר</h2>
+      <div class="sel-form">
+        <label>שם <input id="selName" type="text"></label>
+        <div class="row2">
+          <label>רוחב (ס״מ) <input id="selW" type="number" min="10" max="1000" step="1"></label>
+          <label>עומק (ס״מ) <input id="selD" type="number" min="10" max="1000" step="1"></label>
+        </div>
+        <label class="color-row">צבע <input id="selColor" type="color"></label>
+        <div class="sel-actions">
+          <button id="btnRotate">↻ סיבוב 90°</button>
+          <button id="btnDuplicate">⧉ שכפול</button>
+          <button id="btnDelete" class="danger">🗑️ מחיקה</button>
         </div>
       </div>
+    </div>
 
-      <div class="card" id="selectedCard" hidden>
-        <h2>פריט נבחר</h2>
-        <div class="sel-form">
-          <label>שם <input id="selName" type="text"></label>
-          <div class="row2">
-            <label>רוחב (ס״מ) <input id="selW" type="number" min="10" max="1000" step="1"></label>
-            <label>עומק (ס״מ) <input id="selD" type="number" min="10" max="1000" step="1"></label>
-          </div>
-          <label class="color-row">צבע <input id="selColor" type="color"></label>
-          <div class="sel-actions">
-            <button id="btnRotate">↻ סיבוב 90°</button>
-            <button id="btnDuplicate">⧉ שכפול</button>
-            <button id="btnDelete" class="danger">🗑️ מחיקה</button>
-          </div>
+    <div class="card card-custom">
+      <h2>רהיט מותאם אישית</h2>
+      <div class="custom-form">
+        <label>שם <input id="cName" type="text" placeholder="לדוגמה: פסנתר"></label>
+        <div class="row2">
+          <label>רוחב (ס״מ) <input id="cW" type="number" min="10" max="1000" step="5" value="100"></label>
+          <label>עומק (ס״מ) <input id="cD" type="number" min="10" max="1000" step="5" value="50"></label>
         </div>
+        <button id="btnAddCustom" class="primary">➕ הוסף רהיט מותאם אישית</button>
       </div>
-    </aside>
+    </div>
+
+    <div class="card card-catalog">
+      <h2>הוספת רהיט</h2>
+      <div class="catalog" id="catalog"></div>
+    </div>
   </main>
 
   <!-- Welcome modal -->

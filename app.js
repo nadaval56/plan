@@ -445,6 +445,11 @@
 
     el.addEventListener("pointerdown", (e) => {
       e.preventDefault();
+      // leave any focused text field so Delete / arrows act on the item
+      // immediately (preventDefault above suppresses the native blur)
+      if (document.activeElement && document.activeElement !== document.body) {
+        document.activeElement.blur();
+      }
       selectItem(id);
       const it = getItem(id);
       const p = pointerMeters(e);
@@ -497,6 +502,9 @@
   // click empty canvas -> deselect
   canvasWrap.addEventListener("pointerdown", (e) => {
     if (e.target === canvasWrap || e.target === planBg || e.target === furnLayer) {
+      if (document.activeElement && document.activeElement !== document.body) {
+        document.activeElement.blur();
+      }
       selectItem(null);
     }
   });
