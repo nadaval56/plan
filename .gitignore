@@ -1,0 +1,14 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*~
+.idea/
+.vscode/
+
+# Node (only used locally for testing/screenshots; not part of the app)
+node_modules/
+npm-debug.log*
+
+# Scratch / test output
+scratch*
+*.local

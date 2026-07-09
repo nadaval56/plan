@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#3a4a5a">
+  <title>מתכנן ריהוט — הבית הטרומי</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛋️</text></svg>">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="title-block">
+      <h1>🛋️ מתכנן ריהוט</h1>
+      <label class="home-name">
+        <span>שם הבית:</span>
+        <input id="homeName" type="text" maxlength="40" placeholder="הבית שלי" value="הבית שלי">
+      </label>
+    </div>
+    <div class="stats" id="stats" aria-live="polite">
+      <div><b id="statTotal">—</b><small>שטח כולל</small></div>
+      <div><b id="statUsed">—</b><small>תפוס בריהוט</small></div>
+      <div><b id="statPct">—</b><small>אחוז</small></div>
+      <div><b id="statCount">0</b><small>רהיטים</small></div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button id="btnToggleNames" class="tool">🔤 הסתר שמות</button>
+    <button id="btnExport" class="tool">⬇️ ייצוא עיצוב</button>
+    <button id="btnImport" class="tool">⬆️ ייבוא עיצוב</button>
+    <input id="importFile" type="file" accept="application/json,.json" hidden>
+    <button id="btnReset" class="tool danger">🗑️ אפס</button>
+  </div>
+
+  <main class="layout">
+    <section class="canvas-panel">
+      <div class="stage-grid" id="stageGrid" dir="ltr">
+        <div class="corner"></div>
+        <div class="ruler ruler-x" id="rulerX"></div>
+        <div class="ruler ruler-y" id="rulerY"></div>
+        <div class="canvas-wrap" id="canvasWrap">
+          <div class="plan-bg" id="planBg"></div>
+          <div class="furniture-layer" id="furnLayer"></div>
+        </div>
+      </div>
+      <p class="hint">גרירה = הזזה · לחיצה כפולה = סיבוב 90° · הרהיט נצמד לרשת 5 ס״מ ולקירות</p>
+    </section>
+
+    <aside class="side-panel">
+      <div class="card">
+        <h2>הוספת רהיט</h2>
+        <div class="catalog" id="catalog"></div>
+      </div>
+
+      <div class="card">
+        <h2>רהיט מותאם</h2>
+        <div class="custom-form">
+          <label>שם <input id="cName" type="text" placeholder="לדוגמה: פסנתר"></label>
+          <div class="row2">
+            <label>רוחב (ס״מ) <input id="cW" type="number" min="10" max="1000" step="5" value="100"></label>
+            <label>עומק (ס״מ) <input id="cD" type="number" min="10" max="1000" step="5" value="50"></label>
+          </div>
+          <button id="btnAddCustom" class="primary">➕ הוסף רהיט מותאם</button>
+        </div>
+      </div>
+
+      <div class="card" id="selectedCard" hidden>
+        <h2>פריט נבחר</h2>
+        <div class="sel-form">
+          <label>שם <input id="selName" type="text"></label>
+          <div class="row2">
+            <label>רוחב (ס״מ) <input id="selW" type="number" min="10" max="1000" step="1"></label>
+            <label>עומק (ס״מ) <input id="selD" type="number" min="10" max="1000" step="1"></label>
+          </div>
+          <label class="color-row">צבע <input id="selColor" type="color"></label>
+          <div class="sel-actions">
+            <button id="btnRotate">↻ סיבוב 90°</button>
+            <button id="btnDuplicate">⧉ שכפול</button>
+            <button id="btnDelete" class="danger">🗑️ מחיקה</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Welcome modal -->
+  <div class="modal-backdrop" id="welcome" hidden>
+    <div class="modal">
+      <h2>ברוכים הבאים 👋</h2>
+      <p>זהו מתכנן ריהוט לדירה הטרומית. התוכנית מוצגת ברקע בקנה מידה אמיתי
+        (11.49 × 7.22 מ׳).</p>
+      <p>הוסיפו רהיטים מהקטלוג, גררו, סובבו ושנו גודל כדי לבדוק סידורים.</p>
+      <p><b>העיצוב שלכם נשמר אוטומטית בדפדפן הזה בלבד</b> — הוא פרטי למכשיר שלכם.
+        כדי לגבות או לעבור מכשיר, השתמשו ב״ייצוא עיצוב״.</p>
+      <button id="btnWelcomeOk" class="primary">הבנתי, בואו נתחיל</button>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
