@@ -33,6 +33,8 @@
   משלו.
 - **ייצוא עיצוב** — מוריד קובץ `‎<שם-הבית>.house.json` לגיבוי או להעברה
   בין מכשירים / שיתוף בין שכנים.
+- **הורדה כתמונה** — מוריד תמונת PNG של התוכנית עם הרהיטים, נוחה לשיתוף
+  בווטסאפ או להדפסה.
 - **ייבוא עיצוב** — טוען קובץ `.house.json` (מאמת מבנה לפני טעינה).
 - **אפס** — מנקה את הרהיטים (עם אישור). שם הבית נשמר.
 
@@ -42,6 +44,12 @@
 המקורית. אלה משמשות כמקור האמת לקנה המידה: מלבן הקירות של הבניין בתמונה
 ממופה אל מלבן של 11.49×7.22 מ׳, וכל הרהיטים נגזרים ממנו כך שיוצגו בגודלם
 הנכון בס״מ.
+
+התוכנית המוצגת היא `assets/plan.webp` — גרסה דחוסה (~200KB) של המקור
+האיכותי `assets/plan-source.png` (2400×1784). אפשר להחליף את התמונה בכל
+רזולוציה של אותו חיתוך בלי שינוי בקוד — הכיול מוגדר ביחס לגודל התמונה.
+לחיתוך שונה יש לעדכן את ארבעת שברי הכיול (`PLAN`) ואת `PLAN_IMG` בראש
+`app.js`.
 
 > ⚠️ מידות הפנים המסומנות בתוכנית (למשל חדר 358 ס״מ) עשויות להיות שונות
 > ב-~5% מהמידות שמתקבלות מהמעטפת הזו, בגלל אי-דיוקים בין המידות הנומינליות
@@ -82,6 +90,8 @@ their own browser.
   neighbour keeps a private copy.
 - **Export** downloads `‎<home-name>.house.json` for backup, moving between
   devices, or sharing a layout.
+- **Download as image** — downloads a PNG of the plan with the furniture,
+  handy for sharing or printing.
 - **Import** loads a `.house.json` file (structure is validated first).
 - **Reset** clears the furniture (with confirmation); the home name is kept.
 

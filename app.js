@@ -8,11 +8,16 @@
 
   /* ---------- Fixed plan geometry ----------
      The real building envelope (11.49 x 7.22 m) maps to the sub-rectangle
-     of assets/plan.png (natural size 818x600) where the outer walls sit.
-     Measured wall envelope: x in [16,805], y in [40,534]. */
+     of the plan image where the outer walls sit. Calibration is stored as
+     FRACTIONS of the image size (wall envelope measured 115..2311 x
+     183..1561 on the 2400x1784 source, assets/plan-source.png), so the
+     image can be swapped for any resolution of the same framing without
+     code changes. A different crop only needs these four fractions and
+     PLAN_IMG updated. */
+  const PLAN_IMG = "./assets/plan.webp";
   const PLAN = {
-    imgW: 818, imgH: 600,
-    x0: 16, y0: 40, x1: 805, y1: 534, // sub-rect of image (px)
+    fx0: 115 / 2400, fy0: 183 / 1784,
+    fx1: 2311 / 2400, fy1: 1561 / 1784,
   };
   const HOME = { W: 11.49, H: 7.22 }; // meters (width x depth)
   const AREA_TOTAL = HOME.W * HOME.H; // ~82.9 m^2
@@ -90,16 +95,15 @@
     renderAll();
   }
 
-  // Map plan.png sub-rect [x0,x1]x[y0,y1] to fill the canvas (cw x ch)
+  // Map the plan.png wall sub-rect to fill the canvas (cw x ch).
+  // Uses fractional calibration, so it works at any image resolution.
   function positionBackground(cw, ch) {
-    const sw = PLAN.x1 - PLAN.x0; // sub-rect px width
-    const sh = PLAN.y1 - PLAN.y0;
-    const scaleX = cw / sw;
-    const scaleY = ch / sh;
-    planBg.style.backgroundImage = "url(./assets/plan.png)";
-    planBg.style.backgroundSize = PLAN.imgW * scaleX + "px " + PLAN.imgH * scaleY + "px";
+    const bgW = cw / (PLAN.fx1 - PLAN.fx0);
+    const bgH = ch / (PLAN.fy1 - PLAN.fy0);
+    planBg.style.backgroundImage = "url(" + PLAN_IMG + ")";
+    planBg.style.backgroundSize = bgW + "px " + bgH + "px";
     planBg.style.backgroundPosition =
-      -PLAN.x0 * scaleX + "px " + -PLAN.y0 * scaleY + "px";
+      -PLAN.fx0 * bgW + "px " + -PLAN.fy0 * bgH + "px";
   }
 
   function buildRulers(cw, ch) {
@@ -559,12 +563,84 @@
   });
 
   /* ============================================================
+     Snapshot: download the current layout as a PNG image
+     ============================================================ */
+  $("btnSnapshot").addEventListener("click", () => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const PPM = 160; // export resolution (px per meter)
+        const header = 70;
+        const cw = Math.round(HOME.W * PPM);
+        const ch = Math.round(HOME.H * PPM);
+        const canvas = document.createElement("canvas");
+        canvas.width = cw;
+        canvas.height = ch + header;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, cw, ch + header);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#2b3440";
+        ctx.font = "bold 30px Arial, sans-serif";
+        ctx.fillText(
+          (state.homeName || "הבית שלי") + " — " + HOME.W + " × " + HOME.H + " מ׳",
+          cw / 2, header / 2);
+        // plan background: same fractional sub-rect mapping as on screen
+        const iw = img.naturalWidth, ih = img.naturalHeight;
+        ctx.drawImage(img,
+          PLAN.fx0 * iw, PLAN.fy0 * ih,
+          (PLAN.fx1 - PLAN.fx0) * iw, (PLAN.fy1 - PLAN.fy0) * ih,
+          0, header, cw, ch);
+        state.furniture.forEach((f) => {
+          const fp = footprint(f);
+          const w = fp.w * PPM, h = fp.h * PPM;
+          const x = f.x * PPM - w / 2;
+          const y = header + f.y * PPM - h / 2;
+          ctx.fillStyle = hexToRgba(f.color, 0.62);
+          ctx.fillRect(x, y, w, h);
+          ctx.strokeStyle = shade(f.color, -0.25);
+          ctx.lineWidth = 3;
+          ctx.strokeRect(x, y, w, h);
+          if (showNames && w >= 50 && h >= 30) {
+            const two = h >= 56;
+            ctx.fillStyle = "#1d232b";
+            ctx.font = "bold 18px Arial, sans-serif";
+            ctx.fillText(f.name, x + w / 2, y + h / 2 - (two ? 11 : 0), w - 8);
+            if (two) {
+              ctx.font = "15px Arial, sans-serif";
+              ctx.fillText(Math.round(f.w * 100) + "×" + Math.round(f.d * 100),
+                x + w / 2, y + h / 2 + 12, w - 8);
+            }
+          }
+        });
+        canvas.toBlob((blob) => {
+          if (!blob) { alert("יצירת התמונה נכשלה"); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          const safe = (state.homeName || "בית").replace(/[\\/:*?"<>|]/g, "_");
+          a.href = url;
+          a.download = safe + ".png";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }, "image/png");
+      } catch (err) {
+        alert("הורדת התמונה נכשלה: " + err.message);
+      }
+    };
+    img.onerror = () => alert("טעינת תמונת התוכנית נכשלה");
+    img.src = PLAN_IMG;
+  });
+
+  /* ============================================================
      Toolbar: names toggle + reset
      ============================================================ */
   $("btnToggleNames").addEventListener("click", (e) => {
     showNames = !showNames;
     document.body.classList.toggle("hide-names", !showNames);
-    e.target.textContent = showNames ? "🔤 הסתר שמות" : "🔤 הצג שמות";
+    e.target.textContent = showNames ? "🔤 הסתר תוויות" : "🔤 הצג תוויות";
   });
   $("btnReset").addEventListener("click", () => {
     if (!confirm("לאפס את כל הרהיטים? שם הבית יישמר.")) return;
