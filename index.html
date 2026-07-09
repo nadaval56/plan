@@ -57,40 +57,55 @@
       <p class="hint">מקלדת: חיצים = הזזה (Shift = צעד גדול) · Delete = מחיקה · Ctrl+C/X/V = העתקה/גזירה/הדבקה · Ctrl+D = שכפול</p>
     </section>
 
-    <div class="card card-selected" id="selectedCard" hidden>
-      <h2>פריט נבחר</h2>
-      <div class="sel-form">
-        <label>שם <input id="selName" type="text"></label>
-        <div class="row2">
-          <label>רוחב (ס״מ) <input id="selW" type="number" min="10" max="1000" step="1"></label>
-          <label>עומק (ס״מ) <input id="selD" type="number" min="10" max="1000" step="1"></label>
-        </div>
-        <label class="color-row">צבע <input id="selColor" type="color"></label>
-        <div class="sel-actions">
-          <button id="btnRotate">↻ סיבוב 90°</button>
-          <button id="btnDuplicate">⧉ שכפול</button>
-          <button id="btnDelete" class="danger">🗑️ מחיקה</button>
+    <aside class="side-panel">
+      <div class="card card-custom">
+        <h2>רהיט מותאם אישית</h2>
+        <div class="custom-form">
+          <label>שם <input id="cName" type="text" placeholder="לדוגמה: פסנתר"></label>
+          <div class="row2">
+            <label>רוחב (ס״מ) <input id="cW" type="number" min="10" max="1000" step="5" value="100"></label>
+            <label>עומק (ס״מ) <input id="cD" type="number" min="10" max="1000" step="5" value="50"></label>
+          </div>
+          <button id="btnAddCustom" class="primary">➕ הוסף רהיט מותאם אישית</button>
         </div>
       </div>
-    </div>
 
-    <div class="card card-custom">
-      <h2>רהיט מותאם אישית</h2>
-      <div class="custom-form">
-        <label>שם <input id="cName" type="text" placeholder="לדוגמה: פסנתר"></label>
-        <div class="row2">
-          <label>רוחב (ס״מ) <input id="cW" type="number" min="10" max="1000" step="5" value="100"></label>
-          <label>עומק (ס״מ) <input id="cD" type="number" min="10" max="1000" step="5" value="50"></label>
-        </div>
-        <button id="btnAddCustom" class="primary">➕ הוסף רהיט מותאם אישית</button>
+      <div class="card card-add">
+        <h2>הוספת רהיט</h2>
+        <button id="btnOpenCatalog" class="primary">📚 בחירת רהיט מהקטלוג</button>
       </div>
-    </div>
 
-    <div class="card card-catalog">
+      <div class="card card-selected" id="selectedCard">
+        <h2>פריט נבחר</h2>
+        <div class="sel-form" id="selForm" hidden>
+          <label>שם <input id="selName" type="text"></label>
+          <div class="row2">
+            <label>רוחב (ס״מ) <input id="selW" type="number" min="10" max="1000" step="1"></label>
+            <label>עומק (ס״מ) <input id="selD" type="number" min="10" max="1000" step="1"></label>
+          </div>
+          <label class="color-row">צבע <input id="selColor" type="color"></label>
+          <div class="sel-actions">
+            <button id="btnRotate">↻ סיבוב 90°</button>
+            <button id="btnDuplicate">⧉ שכפול</button>
+            <button id="btnDelete" class="danger">🗑️ מחיקה</button>
+          </div>
+        </div>
+        <div class="sel-empty" id="selEmpty">
+          <p>הקישו על פריט בתוכנית<br>כדי להציג ולערוך את הנתונים שלו</p>
+          <button id="btnEmptyAdd" class="tool">➕ הוסף פריט</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Catalog modal -->
+  <div class="modal-backdrop" id="catalogModal" hidden>
+    <div class="modal modal-catalog">
       <h2>הוספת רהיט</h2>
       <div class="catalog" id="catalog"></div>
+      <button id="btnCatalogClose" class="primary">סגירה</button>
     </div>
-  </main>
+  </div>
 
   <!-- Welcome modal -->
   <div class="modal-backdrop" id="welcome" hidden>

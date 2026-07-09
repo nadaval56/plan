@@ -68,7 +68,6 @@
   const rulerX = $("rulerX");
   const rulerY = $("rulerY");
   const homeNameInput = $("homeName");
-  const selectedCard = $("selectedCard");
 
   const els = new Map(); // id -> furniture DOM element
 
@@ -99,6 +98,12 @@
     canvasWrap.style.height = ch + "px";
     positionBackground(cw, ch);
     buildRulers(cw, ch);
+    // lock the side column to the plan card's height (desktop layout)
+    const stage = $("stageGrid");
+    const side = document.querySelector(".side-panel");
+    if (stage && side) {
+      side.style.setProperty("--side-h", stage.getBoundingClientRect().height + "px");
+    }
     renderAll();
   }
 
@@ -514,8 +519,9 @@
      ============================================================ */
   function syncSelectedPanel() {
     const it = getItem(selectedId);
-    if (!it) { selectedCard.hidden = true; return; }
-    selectedCard.hidden = false;
+    $("selForm").hidden = !it;
+    $("selEmpty").hidden = !!it;
+    if (!it) return;
     $("selName").value = it.name;
     $("selW").value = Math.round(it.w * 100);
     $("selD").value = Math.round(it.d * 100);
@@ -565,10 +571,21 @@
         `<span class="sw" style="background:${def.color}"></span>` +
         `<span>${def.name}</span>` +
         `<small>${def.w}×${def.d} ס״מ</small>`;
-      b.addEventListener("click", () => addItem(def));
+      b.addEventListener("click", () => { addItem(def); closeCatalog(); });
       c.appendChild(b);
     });
   }
+
+  /* ---------- catalog popup ---------- */
+  const catalogModal = $("catalogModal");
+  const openCatalog = () => { catalogModal.hidden = false; };
+  const closeCatalog = () => { catalogModal.hidden = true; };
+  $("btnOpenCatalog").addEventListener("click", openCatalog);
+  $("btnEmptyAdd").addEventListener("click", openCatalog);
+  $("btnCatalogClose").addEventListener("click", closeCatalog);
+  catalogModal.addEventListener("pointerdown", (e) => {
+    if (e.target === catalogModal) closeCatalog();
+  });
   $("btnAddCustom").addEventListener("click", () => {
     const name = ($("cName").value || "רהיט").trim();
     const w = clamp(parseFloat($("cW").value) || 0, 10, 1000);
@@ -810,19 +827,26 @@
   }
 
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !catalogModal.hidden) {
+      closeCatalog();
+      e.preventDefault();
+      return;
+    }
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
     const ctrl = e.ctrlKey || e.metaKey;
     const it = getItem(selectedId);
-    const key = e.key.toLowerCase();
+    // e.code is the PHYSICAL key, independent of keyboard language —
+    // with a Hebrew layout Ctrl+C reports e.key="ב" but e.code="KeyC"
+    const code = e.code;
 
-    if (ctrl && key === "c") {
+    if (ctrl && code === "KeyC") {
       if (it) { clipboard = Object.assign({}, it); e.preventDefault(); }
-    } else if (ctrl && key === "x") {
+    } else if (ctrl && code === "KeyX") {
       if (it) { clipboard = Object.assign({}, it); deleteItem(it.id); e.preventDefault(); }
-    } else if (ctrl && key === "v") {
+    } else if (ctrl && code === "KeyV") {
       if (clipboard) { pasteClipboard(); e.preventDefault(); }
-    } else if (ctrl && key === "d") {
+    } else if (ctrl && code === "KeyD") {
       if (it) { duplicateItem(it.id); e.preventDefault(); }
     } else if (e.key === "Delete" || e.key === "Backspace") {
       if (it) { deleteItem(it.id); e.preventDefault(); }
