@@ -640,7 +640,7 @@
   $("btnToggleNames").addEventListener("click", (e) => {
     showNames = !showNames;
     document.body.classList.toggle("hide-names", !showNames);
-    e.target.textContent = showNames ? "🔤 הסתר שמות" : "🔤 הצג שמות";
+    e.target.textContent = showNames ? "🔤 הסתר תוויות" : "🔤 הצג תוויות";
   });
   $("btnReset").addEventListener("click", () => {
     if (!confirm("לאפס את כל הרהיטים? שם הבית יישמר.")) return;
